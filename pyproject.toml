@@ -1,0 +1,25 @@
+[project]
+name = "slab-shielding"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Joseph Moore", email = "joe.jack.moore@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "openmc-anywhere>=0.16.0.0",
+]
+
+[project.scripts]
+slab-shielding = "slab_shielding:main"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+]
