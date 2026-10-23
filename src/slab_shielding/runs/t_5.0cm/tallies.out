@@ -1,0 +1,11 @@
+ ====================>     TALLY 1: DETECTOR TALLY     <====================
+
+ Cell 4
+   Total Material
+     Flux                                 0.00548221 +/- 9.07242e-05
+ ===================>     TALLY 2: UNCOLLIDED TALLY     <===================
+
+ Incoming Energy [661900, 662100)
+   Cell 4
+     Total Material
+       Flux                                 0.00276625 +/- 5.85255e-05

@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from params import (cross_sections, S, E, MeV_to_eV, flux_no_shield, lead_density,
-                    r_detector, r_in, r_det_in, r_det_out, r_end, V_det)
+                    r_detector, r_in, r_det_in, r_det_out, r_end, V_det, mu)
 
 #Create Shield Material
 shield = openmc.Material(name='lead shield')
 shield.add_element('Pb', 1.0)
 shield.set_density('g/cm3', lead_density)
-shield_thickness = 0 #cm
+shield_thickness = 5.0 #cm
 
 
 def build_geometry(shield_thickness):
@@ -68,7 +68,7 @@ settings.source = source
 settings.run_mode = 'fixed source'
 settings.photon_transport = True
 settings.batches = 10
-settings.particles = 1000
+settings.particles = 100000
 
 #Tallies
 cell_filter = openmc.CellFilter(detector_cell)
@@ -76,7 +76,13 @@ tally = openmc.Tally(name='detector tally')
 tally.filters.append(cell_filter)
 tally.scores.append('flux')
 
-tallies = openmc.Tallies([tally])
+uncollided_tally = openmc.Tally(name='uncollided tally')
+energy_filter = openmc.EnergyFilter([E * MeV_to_eV - 100, E * MeV_to_eV + 100]) #MeV to eV
+uncollided_tally.filters.append(energy_filter)
+uncollided_tally.filters.append(cell_filter)
+uncollided_tally.scores.append('flux')
+
+tallies = openmc.Tallies([tally, uncollided_tally])
 materials = openmc.Materials([shield])
 openmc.config['cross_sections'] = cross_sections
 
@@ -89,7 +95,24 @@ with openmc.StatePoint(statepoint_path) as sp:
     flux_tally = result.mean.item()
     flux_tally_err = result.std_dev.item()
 
+    uncollided_result = sp.get_tally(name='uncollided tally')
+    uncollided_tally_mean = uncollided_result.mean.item()
+    uncollided_tally_err = uncollided_result.std_dev.item()
+
+#Total flux (uncollided + scattered) - no hand-calc equivalent
 flux_openmc = flux_tally / V_det * S
-print(f'Flux tally (per source photon): {flux_tally:.5f} +/- {flux_tally_err:.5f} cm')
-print(f'OpenMC flux    : {flux_openmc:.1f} photons/cm^2/s')
-print(f'Hand-calc flux : {flux_no_shield:.1f} photons/cm^2/s')
+#Uncollided flux
+uncollided_flux_openmc = uncollided_tally_mean / V_det * S
+uncollided_flux_hand = flux_no_shield * np.exp(-mu * shield_thickness)
+#Linear attenuation coefficient OpenMC effectively used
+mu_openmc = -np.log(uncollided_tally_mean) / shield_thickness
+
+print(f'Flux tally (per source photon)      : {flux_tally:.4e} +/- {flux_tally_err:.4e} cm')
+print(f'Uncollided tally (per source photon): {uncollided_tally_mean:.4e} +/- {uncollided_tally_err:.4e} cm')
+print(f'Uncollided relative error           : {uncollided_tally_err / uncollided_tally_mean:.2%}')
+print(f'OpenMC total flux       : {flux_openmc:.2f} photons/cm^2/s')
+print(f'OpenMC uncollided flux  : {uncollided_flux_openmc:.2f} photons/cm^2/s')
+print(f'Hand-calc uncollided    : {uncollided_flux_hand:.2f} photons/cm^2/s')
+print(f'Difference              : {uncollided_flux_openmc / uncollided_flux_hand - 1:.1%}')
+print(f'mu (OpenMC)             : {mu_openmc:.4f} cm^-1')
+print(f'mu (hand calc, XCOM)    : {mu:.4f} cm^-1')
