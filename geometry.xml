@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<geometry>
+  <cell id="1" name="source void and gap" material="void" region="-2" universe="1"/>
+  <cell id="2" name="detector" material="void" region="2 -3" universe="1"/>
+  <cell id="3" name="outer void" material="void" region="3 -4" universe="1"/>
+  <surface id="2" type="sphere" coeffs="0.0 0.0 0.0 99.5"/>
+  <surface id="3" type="sphere" coeffs="0.0 0.0 0.0 100.5"/>
+  <surface id="4" type="sphere" boundary="vacuum" coeffs="0.0 0.0 0.0 110.5"/>
+</geometry>
