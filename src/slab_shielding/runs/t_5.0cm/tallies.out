@@ -9,3 +9,9 @@
    Cell 4
      Total Material
        Flux                                 0.00276625 +/- 5.85255e-05
+ ===================>     TALLY 3: AIR KERMA TALLY     <====================
+
+ Energy Function f([1.0e+03, ..., 2.0e+07]) = [3.6e+00, ..., 2.6e-01]
+   Cell 4
+     Total Material
+       Flux                                 9.72577e-05 +/- 1.69017e-06
