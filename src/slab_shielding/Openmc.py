@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from params import (cross_sections, S, E, MeV_to_eV, flux_no_shield, lead_density,
-                    r_detector, r_in, r_det_in, r_det_out, r_end, V_det, mu)
+                    r_detector, r_in, r_det_in, r_det_out, r_end, V_det, mu, air_energy, 
+                    air_mu_en_rho, MeV_to_J, g_to_kg, s_to_h, e_dep, K_dot_no_shield, gp_buildup, Gy_to_uGy)
 
 #Create Shield Material
 shield = openmc.Material(name='lead shield')
@@ -82,7 +83,14 @@ uncollided_tally.filters.append(energy_filter)
 uncollided_tally.filters.append(cell_filter)
 uncollided_tally.scores.append('flux')
 
-tallies = openmc.Tallies([tally, uncollided_tally])
+air_kerma_tally = openmc.Tally(name='air kerma tally')
+energy_function_filter = openmc.EnergyFunctionFilter(air_energy * MeV_to_eV, air_energy * air_mu_en_rho) #MeV to eV for first param as openmc compares in ev, second param in MeV*cm^2/g
+energy_function_filter.interpolation = 'log-log'
+air_kerma_tally.filters.append(energy_function_filter)
+air_kerma_tally.filters.append(cell_filter)
+air_kerma_tally.scores.append('flux')
+
+tallies = openmc.Tallies([tally, uncollided_tally, air_kerma_tally])
 materials = openmc.Materials([shield])
 openmc.config['cross_sections'] = cross_sections
 
@@ -99,6 +107,10 @@ with openmc.StatePoint(statepoint_path) as sp:
     uncollided_tally_mean = uncollided_result.mean.item()
     uncollided_tally_err = uncollided_result.std_dev.item()
 
+    dose_result = sp.get_tally(name='air kerma tally')
+    dose_tally_mean = dose_result.mean.item()
+    dose_tally_err = dose_result.std_dev.item()
+
 #Total flux (uncollided + scattered) - no hand-calc equivalent
 flux_openmc = flux_tally / V_det * S
 #Uncollided flux
@@ -106,13 +118,24 @@ uncollided_flux_openmc = uncollided_tally_mean / V_det * S
 uncollided_flux_hand = flux_no_shield * np.exp(-mu * shield_thickness)
 #Linear attenuation coefficient OpenMC effectively used
 mu_openmc = -np.log(uncollided_tally_mean) / shield_thickness
+#Total air kerma rate (uncollided + scattered), in Gy/h
+K_dot_openmc = dose_tally_mean / V_det * S * MeV_to_J * g_to_kg * s_to_h
+K_dot_openmc_err = dose_tally_err / V_det * S * MeV_to_J * g_to_kg * s_to_h
+#Uncollided air kerma rate, in Gy/h (all at 662 keV, so e_dep applies)
+K_dot_uncollided_openmc = uncollided_flux_openmc * e_dep * MeV_to_J * g_to_kg * s_to_h
+#Monte Carlo buildup factor
+B_openmc = K_dot_openmc / K_dot_uncollided_openmc
 
-print(f'Flux tally (per source photon)      : {flux_tally:.4e} +/- {flux_tally_err:.4e} cm')
-print(f'Uncollided tally (per source photon): {uncollided_tally_mean:.4e} +/- {uncollided_tally_err:.4e} cm')
-print(f'Uncollided relative error           : {uncollided_tally_err / uncollided_tally_mean:.2%}')
-print(f'OpenMC total flux       : {flux_openmc:.2f} photons/cm^2/s')
-print(f'OpenMC uncollided flux  : {uncollided_flux_openmc:.2f} photons/cm^2/s')
-print(f'Hand-calc uncollided    : {uncollided_flux_hand:.2f} photons/cm^2/s')
-print(f'Difference              : {uncollided_flux_openmc / uncollided_flux_hand - 1:.1%}')
-print(f'mu (OpenMC)             : {mu_openmc:.4f} cm^-1')
-print(f'mu (hand calc, XCOM)    : {mu:.4f} cm^-1')
+#Hand calc at this thickness
+mfp = mu * shield_thickness
+B_hand = gp_buildup(mfp)
+K_dot_uncollided_hand = K_dot_no_shield * np.exp(-mfp)
+K_dot_hand = K_dot_uncollided_hand * B_hand
+
+
+print(f'OpenMC air kerma rate   : {K_dot_openmc * Gy_to_uGy:.2f} uGy/h')
+print(f'OpenMC air kerma rate error : {K_dot_openmc_err * Gy_to_uGy:.2f} uGy/h')
+print(f'Hand-calc air kerma rate: {K_dot_hand * Gy_to_uGy:.2f} uGy/h')
+print(f'Difference               : {K_dot_openmc / K_dot_hand - 1:.1%}')
+print(f'OpenMC buildup factor    : {B_openmc:.2f}')
+print(f'Hand-calc buildup factor : {B_hand:.2f}')
