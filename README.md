@@ -38,7 +38,7 @@ Everything except the lead is void, so the Monte Carlo model contains exactly th
 
 The air kerma rate at the detector is
 
-$$\dot{K} = \frac{S}{4\pi r^2}\ e^{-\mu t}\; B(\mu t)\ E\left(\frac{\mu_{en}}{\rho}\right)_{\text{air}}$$
+$$\dot{K} = \frac{S}{4\pi r^2}\ e^{-\mu t}\ B(\mu t)\ E\left(\frac{\mu_{en}}{\rho}\right)_{\text{air}}$$
 
 | Term | Meaning |
 |---|---|
@@ -122,7 +122,7 @@ The uncollided results agree within one standard deviation, which validates the 
 
 ### 4.3 Thickness sweep
 
-![OpenMC vs hand calculation](Results/openmc_vs_hand_calc.png)
+![OpenMC vs hand calculation](openmc_vs_hand_calc.png)
 
 #### Finite lead shell (detector at 1 m)
 
