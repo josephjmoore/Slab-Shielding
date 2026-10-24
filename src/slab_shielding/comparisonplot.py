@@ -8,6 +8,9 @@ from params import mu, K_dot_no_shield, gp_buildup, Gy_to_uGy
 csv_path = Path(__file__).resolve().parent / "Results" / "openmc_sweep.csv"
 csv = pd.read_csv(csv_path)
 
+csv_inf_path = Path(__file__).resolve().parent / "Results" / "openmc_infinite_sweep.csv"
+csv_inf = pd.read_csv(csv_inf_path)
+
 shield_thickness = csv["thickness_cm"]
 K_total_openmc_uGy_h = csv["K_total_openmc_uGy_h"]
 K_total_openmc_err_uGy_h = csv["K_total_openmc_err_uGy_h"]
@@ -30,6 +33,11 @@ ratio_total = K_total_openmc_uGy_h / K_total_hand_uGy_h
 ratio_total_err = K_total_openmc_err_uGy_h / K_total_hand_uGy_h
 ratio_uncollided = K_uncollided_openmc_uGy_h / K_uncollided_hand_uGy_h
 ratio_uncollided_err = K_uncollided_openmc_err_uGy_h / K_uncollided_hand_uGy_h
+
+#Effective infinite thickness for build up comparison - validates openmc
+mfp_inf = csv_inf["mfp"]
+B_openmc_inf = csv_inf["B_openmc"]
+B_openmc_err_inf = csv_inf["B_openmc_err"]
 
 #Colours
 colour_openmc = "#83d62a"      
@@ -58,6 +66,8 @@ ax2.plot(mfp_fine, B_hand_fine,
          color=colour_hand, linewidth=2, linestyle='--', label='Hand Calculation (GP)')
 ax2.errorbar(mfp, B_openmc, yerr=B_openmc_err,
              fmt='x', color=colour_openmc, markersize=6, capsize=3, label='OpenMC')
+ax2.errorbar(mfp_inf, B_openmc_inf, yerr=B_openmc_err_inf,
+             fmt='x', color=colour_text, markersize=6, capsize=3, label='OpenMC Infinite Effective Thickness')
 ax2.set_xlabel('Lead thickness (mean free paths)')
 ax2.set_ylabel('Exposure buildup factor B')
 ax2.set_title('Buildup factor, lead, 0.662 MeV', loc='left')
