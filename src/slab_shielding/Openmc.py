@@ -1,4 +1,3 @@
-
 import openmc
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -13,7 +12,7 @@ from params import (cross_sections, S, E, MeV_to_eV, flux_no_shield, lead_densit
 shield = openmc.Material(name='lead shield')
 shield.add_element('Pb', 1.0)
 shield.set_density('g/cm3', lead_density)
-shield_thickness = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0] #cm
+shield_thickness = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0] #cm
  
 #Conversion from MeV/g/s to Gy/h
 MeV_per_g_s_to_Gy_per_h = MeV_to_J * g_to_kg * s_to_h
